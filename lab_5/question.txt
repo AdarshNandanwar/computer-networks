@@ -1,0 +1,21 @@
+ASSIGNMENT: 
+Q1) Develop a TCP-based server and client using C. The single client requests data from a file on the server. The server opens the file and sends data back to the client.
+Given: The server has few text files files in its present working directory. The client and server will work in separate directories.
+
+Input: The server will accept its port number as the input parameter. (5 marks) The client sends a query to server requesting data from <filename> to the server. The client will accept sever's IP address, server' port number, and the requested <filename> as input parameters. (5 marks) 
+
+Output: The server parses the query and returns the first 10 bytes of the file <filename>. (5 marks)
+On receiving the data, the client creates the file <filename> and stores the data. (5 marks). A sample file is attached.
+
+Error handling:
+If the server is unreachable, the client must say so. (2 marks)
+If the requested <filename> file is missing, the server sends an empty file to the client. (2 marks)
+
+DELIVERABLES
+Source code of client and server.
+Screenshots of an example showing the input and outputs described above in a PDF. (4 marks)
+README file on how to compile and run the code. (2 marks)
+
+REFERENCES:
+https://notes.shichao.io/unp/ch4/#chapter-4-elementary-tcp-sockets
+https://ops.tips/blog/a-tcp-server-in-c/

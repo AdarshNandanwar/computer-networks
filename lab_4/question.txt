@@ -1,0 +1,25 @@
+Lab 4 evaluation: Named Pipes following FIFO
+
+Total 32 marks
+
+Q 1.  Write a C program for client-server text messaging app using named PIPE(FIFO).
+
+Steps of the app:
+1 - The text messages sent by the client to the server or vice-versa will be written to the named pipes.
+2 - Either side reading the messages will read it from the names pipe.
+3 - You have to write two programs separately for a client and a server. You will run them in different terminals, concurrently, to show the output.
+4- There is no constraint on the message size. You are free to use any number of pipes. 
+5- When the user types 'exit' in the client or the server terminal, the program must exit without blocking the other end. All pipes must be closed and memory freed before you close.
+
+Files to Submit:
+1) The client and the server .c files (Correct execution of each of the following carry 4 marks each, amounting to 24 marks)
+   - The text message typed from the client terminal to be sent to the server
+   - The display of client's sent messages on the server's terminal
+   - The same two screenshots above must be repeated for the opposite direction message example, i.e, server to client message transfer and termination
+   - Terminate the client program by typing 'exit' at the client terminal 
+   - Terminate the server by typing 'exit' at the server terminal
+2) Screenshots of output showing: (Total 6 screenshots X 1 mark = 6 marks) in a PDF
+3) A README instruction file to compile and run your code and produce the output. (Total - 2 marks)
+
+References:
+https://www.gnu.org/software/libc/manual/html_node/Pipes-and-FIFOs.html

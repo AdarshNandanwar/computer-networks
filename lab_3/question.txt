@@ -1,0 +1,22 @@
+Total - 30 marks
+Prerequisite: Wireshark must be installed on your computer.
+
+Q1. Customize your Wireshark - (6 marks)
+Generally, WireShark columns are arranged in the following order (which you can observe on your machine) - No. , Time, Source, Destination, Protocol, Length. etc. Being a security expert you have to arrange the WireShark display in such a way that it must have only the following items (1 mark per correct display item with the correct filter/field value and a screenshot).
+a. Date & time in UTC
+b. Source IP and source port
+c. Destination IP and destination port
+d. HTTP host
+e. HTTPS server
+f. Info
+
+Q2. Wireshark dump analysis - (24 marks)
+Using the given Lab3-Q2.pcapng, file answer the following questions. You have to write down the filter you have used (2 marks) and attach a screenshot and explain your output (2 marks).
+a. Identify the http request packet
+b. Identify the http response packet
+c. Display the statistics of the TCP and UDP packets
+d. List out the TCP packets whose syn. and ack. Flags are on.
+e. List out the TCP and UDP packets where destination port=80.
+f. List out the ARP packets.
+
+Note - Do not Multiple answers for the same question. We will not consider those answers.

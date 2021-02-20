@@ -1,0 +1,10 @@
+Find network commands to do the following. 
+1. See the statistics of TCP and UDP ports on Linux machine
+2. Enlist the listening ports on your machine
+3. See the mail xchange (MX) record for www.gmail.com
+4. Display the all network interfaces on your machine
+5. A list of intermediate routers to reach 8.8.8.8 from your machine, with latency
+6. Send 10 echo requests to 8.8.8.8 server from your machine
+7. Get the IP address of www.bits-pilani.ac.in domain.
+
+For each command, put up a screenshot of the output with the explanation in a PDF file. Submit the file.

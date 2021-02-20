@@ -1,0 +1,16 @@
+Following is a list of commands, which you will execute. For each command, have screenshot and write an explanation about the output seen. For help, you can refer Linux manual.
+
+1. tcpdump 
+2. ifconfig 
+3. dig 
+4. arp 
+5. netstat 
+6. telnet 
+7. traceroute 
+8. ping 
+9. top 
+10. wall 
+11. uptime 
+12. nslookup 
+
+Put all the screenshots and the explanations in a PDF and submit it. 
