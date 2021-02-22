@@ -14,12 +14,9 @@
 
 int main(int argc, char * argv[]){
 
-    if(argc != 2){
-        printf("Please provide port number as first input parameter\n");
-        return -1;
-    }
-
-    int server_port = atoi(argv[1]);
+    int server_port;
+    printf("Enter port number: ");
+    scanf("%d", &server_port);
 
     // creating the socket
     int socket_descriptor;
@@ -63,6 +60,7 @@ int main(int argc, char * argv[]){
             printf("Error connecting to client socket\n");
             return 4;
         }
+        if(DEBUG) printf("client accepted\n");
 
         // receiving request from the client
         if(DEBUG) printf("receiving request data from client ...\n");
@@ -80,7 +78,7 @@ int main(int argc, char * argv[]){
         char * response_data = (char *) malloc(BUFFER_SIZE * sizeof(char));
         FILE * fd_in = fopen(request_data, "r");
         if(fd_in == NULL){
-            printf("Error opening \"%s\"\n", request_data);
+            printf("File \"%s\" not found\n", request_data);
             response_data[0] = '\0';
         } else {
             fread(response_data, 10, 1, fd_in);

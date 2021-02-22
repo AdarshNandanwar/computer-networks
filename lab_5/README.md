@@ -15,10 +15,12 @@ BITS ID- 2018A7PS0396G</div>
     ```bash
     $ gcc server.c -o server
     ```
-2. Execute the executable. Parameters: `{port number}`
+3. Execute the executable.
     ```bash
-    $ ./server 8000
+    $ ./server
     ```
+4. Enter the port number (e.g. `8000`) when asked.
+6. Press `Ctrl+C` to exit
 ### Terminal 2 (Client)
 1. Navigate to the client directory
     ```bash
@@ -28,7 +30,10 @@ BITS ID- 2018A7PS0396G</div>
     ```bash
     $ gcc client.c -o client
     ```
-3. Execute the executable. Parameters: `{IP address, port number, file name}`
+3. Execute the executable.
     ```bash
-    $ ./client 127.0.0.1 8000 Networkingtrends.txt
+    $ ./client
     ```
+4. Enter the server IP address (e.g. `127.0.0.1`) and port number (e.g. `8000`) when asked.
+5. Enter the file name (e.g. `Networkingtrends.txt`) of to request it when asked.
+6. Press `Ctrl+C` to exit
