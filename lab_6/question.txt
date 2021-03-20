@@ -1,0 +1,13 @@
+Question
+
+Write a TCP server and a client for the following.
+1. The server as a command line argument accepts the port number to which it should bind. (1 mark)
+2. The client, as command line arguments, accepts the IP address and the port number at which it will find the server. (1 mark)
+3. After connecting to the server, the client reads a line from the standard input and sends it to the server. (1 mark)
+4. The server prints the received line in the reverser order (2 marks) and reads a line from the standard input and sends it to the client. (1 mark)
+5. The client prints the received line in the reverse order and is ready to accept a new line from the user. (2 marks)
+6. The client exits if the user type "exit". (1 mark)
+7. The server at a time accepts at the most four clients. (4 marks) Any client above the limit is rejected. (4 marks) As and when the number is less than the limit, the server accepts the new client. (2 marks)
+Notes
+1. All the students will upload C code along with a PDF file containing the screenshots of the executed program on Google classroom
+2. Submit a README file giving instruction for compilation and execution

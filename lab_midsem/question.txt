@@ -1,0 +1,15 @@
+Notes
+1. All the students will upload C code along with a PDF file containing the screenshots of the executed program on Google classroom
+2. Submit a REAMDE file giving instruction for compilation and execution
+3. Submit the captured pcap file
+4. Write the wireshark filter, measured values, and the justification in the PDF
+5. We will use MOSS to detect cheating cases
+
+Question
+Write a TCP server and a client for the following.
+1. The server as a command line argument accepts the port number to which it should bind. (2 marks)
+2. The client, as command line arguments, accepts the IP address and the port number at which it will find the server. (2 marks)
+3. After connecting to the server, the client reads a line from the standard input and sends it to the server. (2 marks)
+4. The server prints the received line in the reverser order (2 marks) and reads a line from the standard input and sends it to the client. (2 marks)
+5. The client prints the received line in the reverse order and exits. The server is ready to accept a new client. (2 marks)
+6. Use Wireshark to capture the packets (2 marks) and write a filter that will find what were the sizes of the TCP segment sent from the client to the server. (2 marks) Compare the number of bytes in the line with those observed in the TCP segment. Justify how the values match. (2 marks)
