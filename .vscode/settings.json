@@ -5,6 +5,7 @@
         "stdlib.h": "c",
         "socket.h": "c",
         "unistd.h": "c",
-        "in.h": "c"
+        "in.h": "c",
+        "fcntl.h": "c"
     }
 }

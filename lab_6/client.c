@@ -11,7 +11,7 @@
 #include <errno.h>
 
 #define BUFFER_SIZE 1024
-#define DEBUG 1
+#define DEBUG 0
 
 void reverse_string(char * str){
     int n = strlen(str);
@@ -40,7 +40,7 @@ int main(int argc, char * argv[]){
     int socket_descriptor;
     socket_descriptor = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(socket_descriptor == -1){
-        printf("Error creating socket\n");
+        printf("error creating socket\n");
         printf("[error %d]: %s\n", errno, strerror(errno));
         return 1;
     }
@@ -55,11 +55,33 @@ int main(int argc, char * argv[]){
     // connecting the socket
     int connection = connect(socket_descriptor, (struct sockaddr *) socket_config,  sizeof(struct sockaddr_in));
     if(connection == -1){
-        printf("Error connecting the server. Server is not reachable.\n");
+        printf("error connecting the server. server is not reachable.\n");
         printf("[error %d]: %s\n", errno, strerror(errno));
         return 2;
     }
     if(DEBUG) printf("connection successful\n");
+
+
+    // receive confirmation data
+    if(DEBUG) printf("waiting for confirmation from server ...\n");
+    char * confirmation_message = (char *) malloc(BUFFER_SIZE * sizeof(char));
+    int bytes_received = recv(socket_descriptor, confirmation_message, BUFFER_SIZE, 0);
+    if(bytes_received == -1){
+        printf("Error receiving confirmation data\n");
+        printf("[error %d]: %s\n", errno, strerror(errno));
+        close(socket_descriptor);
+        return 4;
+    }
+    if(DEBUG) printf("confirmation received (%d bytes)\n", bytes_received);
+
+    // checking if server limit exceeded
+    if(strcmp(confirmation_message, "1")){
+        printf("server's client limit reached. try again in a while.\n");
+        close(socket_descriptor);
+        return 4;
+    } else {
+        printf("connected to the server\n");
+    }
 
     while(1){
 
@@ -71,26 +93,26 @@ int main(int argc, char * argv[]){
         } while(strlen(message_send) == 0);
 
         // exit condition
-        if(!strcmp(message_send, "exit")) break;
+        if(strcmp(message_send, "exit") == 0) break;
 
         // send request data
-        if(DEBUG) printf("sending the message \"%s\" to server ...\n", message_send);
+        if(DEBUG) printf("sending the message to server ... (\"%s\")\n", message_send);
         char * request_data = (char *) malloc(BUFFER_SIZE * sizeof(char));
         strcpy(request_data, message_send);
         int bytes_sent = send(socket_descriptor, request_data, strlen(request_data), 0);
         if(bytes_sent != strlen(request_data)){
-            printf("Error sending request\n");
+            printf("error sending request\n");
             printf("[error %d]: %s\n", errno, strerror(errno));
             return 3;
         }
-        printf("* message sent (%d bytes) *\n", bytes_sent);
+        printf("* sending message (%d bytes) *\n", bytes_sent);
 
         // receive response data
         if(DEBUG) printf("waiting for response from server ...\n");
         char * response_data = (char *) malloc(BUFFER_SIZE * sizeof(char));
         int bytes_received = recv(socket_descriptor, response_data, BUFFER_SIZE, 0);
         if(bytes_received == -1){
-            printf("Error receiving response data\n");
+            printf("error receiving response data\n");
             printf("[error %d]: %s\n", errno, strerror(errno));
             return 4;
         }
@@ -103,14 +125,13 @@ int main(int argc, char * argv[]){
             printf("[server, %d bytes]: %s\n", bytes_received, response_data);
         } else {
             printf("server disconnected\n");
-            printf("[error %d]: %s\n", errno, strerror(errno));
+            if(DEBUG) printf("[error %d]: %s\n", errno, strerror(errno));
             break;
         }
     }
 
     // closing the socket
     close(socket_descriptor);
-
 
     return 0;
 }
