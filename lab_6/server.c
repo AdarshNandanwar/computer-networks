@@ -17,6 +17,7 @@
 
 int active_connections;
 pthread_mutex_t mutex;
+pthread_mutex_t mutex_stdin;
 
 typedef struct ParamStruct {
     int client_socket_descriptor;
@@ -61,11 +62,13 @@ void * connection_runner (void * param) {
         }
 
         // taking the response input from STDIN
+        pthread_mutex_lock(&mutex_stdin);
         do {
             printf("Enter response message for client[%d]: \n", client_socket_descriptor);
             fgets(response_data, BUFFER_SIZE, stdin);
             response_data[strlen(response_data)-1] = '\0';
         } while(strlen(response_data) == 0);
+        pthread_mutex_unlock(&mutex_stdin);
         
         // sending response data
         if(DEBUG) printf("sending response to client[%d] ... (\"%s\")\n", client_socket_descriptor, response_data);
