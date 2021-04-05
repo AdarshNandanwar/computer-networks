@@ -1,14 +1,9 @@
 // CLIENT
-// http://example.com/files/text.txt
-
-// References:
-// https://stackoverflow.com/questions/41229601/openssl-in-c-socket-connection-https-client
 
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
-// #include <openssl/applink.c>
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -19,9 +14,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-// #define BUFFER_SIZE 65536
-#define BUFFER_SIZE 1024
-#define DEBUG 1
+#define BUFFER_SIZE 4096
+#define DEBUG 0
 
 void reverse_string(char * str){
     int n = strlen(str);
@@ -89,31 +83,26 @@ int parse_url(char * file_url, char * file_host, char * file_protocol, char * fi
     return 0;
 }
 
-void log_ssl()
-{
-    int err;
-    while (err = ERR_get_error()) {
-        char *str = ERR_error_string(err, 0);
-        if(!str) return;
-        printf("%s\n", str);
-        fflush(stdout);
-    }
+// get port, IPv4 or IPv6:
+in_port_t get_port(struct sockaddr *sa){
+    if(sa->sa_family == AF_INET)
+        return (((struct sockaddr_in*)sa)->sin_port);
+    return (((struct sockaddr_in6*)sa)->sin6_port);
 }
 
-// Beej's get_in_addr function
-// get port, IPv4 or IPv6:
-in_port_t get_in_port(struct sockaddr *sa)
-{
-    if (sa->sa_family == AF_INET)
-        return (((struct sockaddr_in*)sa)->sin_port);
-
-    return (((struct sockaddr_in6*)sa)->sin6_port);
+void print_http_status(char * res){
+    printf("HTTP Status: ");
+    char * end = strstr(res, "\r\n");
+    for(char * ptr = res+9; ptr != end; ptr++){
+        printf("%c", *ptr);
+    }
+    printf("\n");
 }
 
 int main(int argc, char * argv[]){
 
     if(argc != 2){
-        printf("Please pass the file URL as parameter. Format: https://filesamples.com/samples/document/txt/sample1.txt/\n");
+        printf("Please pass the file URL as parameter. Format: https://raw.githubusercontent.com/torvalds/linux/master/README\n");
         return -1;
     }
 
@@ -130,7 +119,7 @@ int main(int argc, char * argv[]){
     printf("Parsing URL ...\n");
     status = parse_url(file_url, file_host, file_protocol, file_path, file_name);
     if(status != 0){
-        printf("Invalid URL. Please ensure the URL is valid and is in the format https://filesamples.com/samples/document/txt/sample1.txt/\n");
+        printf("Invalid URL. Please ensure the URL is valid and is in the format https://raw.githubusercontent.com/torvalds/linux/master/README\n");
         return 0;
     }
     printf("Protocol: %s\nHost: %s\nPath: %s\nFilename: %s\n\n", file_protocol, file_host, file_path, file_name);
@@ -143,7 +132,7 @@ int main(int argc, char * argv[]){
     hints.ai_socktype = SOCK_STREAM;
     status = getaddrinfo(file_host, file_protocol, &hints, &socket_config);
     if(status != 0){
-        printf("error getting addrinfo.\n");
+        printf("error getting addrinfo. please verify the URL.\n");
         printf("[error %d]: %s\n", errno, strerror(errno));
         return 2;
     }
@@ -187,8 +176,8 @@ int main(int argc, char * argv[]){
     // printing the server IP address and the port number
     char * ip_address = (char *) malloc(BUFFER_SIZE * sizeof(char));
     inet_ntop(itr->ai_addr->sa_family, &((struct sockaddr_in*) itr->ai_addr)->sin_addr, ip_address, INET_ADDRSTRLEN);
-    if(DEBUG) printf("Server IP address: %s\n", ip_address);
-    if(DEBUG) printf("Server Port: %d\n", ntohs(get_in_port((struct sockaddr *)itr->ai_addr)));
+    printf("Server IP address: %s\n", ip_address);
+    printf("Server Port: %d\n", ntohs(get_port((struct sockaddr *)itr->ai_addr)));
 
 
     // generating the GET request message
@@ -196,13 +185,14 @@ int main(int argc, char * argv[]){
     sprintf(message_send, "GET /%s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nContent-Type: text/plain\r\n\r\n", file_path, file_host);
 
 
+    int data_size = 0;
     if(strcmp(file_protocol, "http") == 0){
 
         /* ########## HTTP ########## */
 
 
         // send GET request data
-        if(DEBUG) printf("* sending the message: *\n%s\n", message_send);
+        printf("\nsending the message to server: \n%s", message_send);
         char * request_data = (char *) malloc(BUFFER_SIZE * sizeof(char));
         strcpy(request_data, message_send);
         int bytes_sent = send(socket_descriptor, request_data, strlen(request_data), 0);
@@ -214,12 +204,13 @@ int main(int argc, char * argv[]){
 
 
         // receive response data
-        if(DEBUG) printf("waiting for response from server ...\n");
+        int is_header = 1, is_status = 1;
+        printf("waiting for response from server ...\n");
         char * response_data = (char *) malloc(BUFFER_SIZE * sizeof(char));
         // storing the data received in a file
         FILE * fd_out = fopen(file_name, "w");
         if(fd_out == NULL){
-            printf("Error opening \"%s\"\n", file_name);
+            printf("error opening \"%s\"\n", file_name);
             return 6;
         }
         while(1){
@@ -232,10 +223,25 @@ int main(int argc, char * argv[]){
                 // server disconnected
                 break;
             }
-            if(DEBUG) printf("data received (%d bytes)\n", bytes_received);
+            printf("data received (%d bytes)\n", bytes_received);
             response_data[bytes_received] = '\0';
-            fprintf(fd_out, "%s", response_data);
-            // printf("%s", response_data);
+            if(is_header){
+                // HTTP header
+                if(is_status){
+                    print_http_status(response_data);
+                    is_status = 0;
+                }
+                char * ptr = strstr(response_data, "\r\n\r\n");
+                if(ptr != NULL){
+                    response_data = ptr+4;
+                    is_header = 0;
+                }
+            }
+            if(!is_header){
+                // body
+                fprintf(fd_out, "%s", response_data);
+                data_size += strlen(response_data);
+            }
         }
         fclose(fd_out);
 
@@ -249,8 +255,8 @@ int main(int argc, char * argv[]){
         SSLeay_add_ssl_algorithms();
         SSL_load_error_strings();
         // const SSL_METHOD * method = TLSv1_2_client_method();
-        const SSL_METHOD * method = SSLv23_client_method();
-        SSL_CTX * ctx = SSL_CTX_new(method);
+        const SSL_METHOD * ssl_method = SSLv23_client_method();
+        SSL_CTX * ctx = SSL_CTX_new(ssl_method);
         if(ctx == NULL){
             printf("error creating ctx.\n");
             return -1;
@@ -258,15 +264,13 @@ int main(int argc, char * argv[]){
         SSL * ssl = SSL_new(ctx);
         if(!ssl){
             printf("error creating SSL.\n");
-            log_ssl();
             return -1;
         }
         int sock = SSL_get_fd(ssl);
         SSL_set_fd(ssl, socket_descriptor);
         status = SSL_connect(ssl);
         if(status <= 0){
-            printf("error creating SSL connection. err=%x\n", status);
-            log_ssl();
+            printf("[err = %x] error creating SSL connection.\n", status);
             fflush(stdout);
             return -1;
         }
@@ -274,7 +278,7 @@ int main(int argc, char * argv[]){
 
 
         // send GET request data
-        if(DEBUG) printf("\nsending the message to server: \n%s\n", message_send);
+        printf("\nsending the message to server: \n%s", message_send);
         int bytes_sent = SSL_write(ssl, message_send, strlen(message_send));
         if (bytes_sent < 0) {
             int err = SSL_get_error(ssl, bytes_sent);
@@ -284,7 +288,8 @@ int main(int argc, char * argv[]){
 
 
         // receive response data
-        if(DEBUG) printf("waiting for response from server ...\n");
+        int is_header = 1, is_status = 1;
+        printf("waiting for response from server ...\n");
         char * response_data = (char *) malloc(BUFFER_SIZE * sizeof(char));
         // storing the data received in a file
         FILE * fd_out = fopen(file_name, "w");
@@ -302,16 +307,35 @@ int main(int argc, char * argv[]){
                 // server disconnected
                 break;
             }
-            if(DEBUG) printf("data received (%d bytes)\n", bytes_received);
+            printf("data received (%d bytes)\n", bytes_received);
             response_data[bytes_received] = '\0';
-            fprintf(fd_out, "%s", response_data);
-            // printf("%s", response_data);
+            if(is_header){
+                // HTTP header
+                if(is_status){
+                    print_http_status(response_data);
+                    is_status = 0;
+                }
+                char * ptr = strstr(response_data, "\r\n\r\n");
+                if(ptr != NULL){
+                    response_data = ptr+4;
+                    is_header = 0;
+                }
+            }
+            if(!is_header){
+                // body
+                fprintf(fd_out, "%s", response_data);
+                data_size += strlen(response_data);
+            }
         }
         fclose(fd_out);
 
     }
 
-    printf("\nFile downloaded!\n");
+    if(data_size){
+        printf("\nfile downloaded (\"%s\", %d bytes)\n", file_name, data_size);
+    } else {
+        printf("\nERROR: URL does not exist or is unreachable. The file may be empty.\n");
+    }
 
     // closing the socket
     close(socket_descriptor);

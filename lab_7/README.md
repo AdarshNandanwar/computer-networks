@@ -6,12 +6,16 @@ BITS ID- 2018A7PS0396G</div>
 <br>
 
 ## Usage Instructions
-1. Compile the c program
+1. Install OpenSSL library.
+2. Open a terminal window in the directory containing `client.c` file.
+3. Compile the c program.
     ```bash
     $ gcc client.c -o client -lcrypto -lssl
     ```
-2. Execute the executable.
+4. Execute the executable.
     ```bash
-    $ ./client http://example.com/files/text.txt
+    $ ./client https://raw.githubusercontent.com/torvalds/linux/master/README
+    $ ./client https://raw.githubusercontent.com/git/git/master/Documentation/git.txt
+    $ ./client http://www.example.com/sample.html
     ```
-3. File will be downloaded in the current working directory.
+5. Files will be downloaded in the current working directory.
