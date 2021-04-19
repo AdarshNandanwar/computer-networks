@@ -1,0 +1,14 @@
+Lab 8 : Wireshark revisited
+Dasgaonkar Yogesh Namdeo
+Apr 10
+18 points
+
+Use Wireshark to capture packets in your LAN.
+
+1. Show a round of execution of the DHCP protocol. Show DHCP Request (2 marks), Reply (2 marks), and ACK messages (2 marks) in that round. Find out IP addresses of the DHCP server (2 marks) and client (2 marks). Write the filter and show the output in a screenshot.
+
+2. Show a round of execution of the ARP protocol. Show ARP Request (2 marks) and Reply (2 marks) messages in that round. Find the MAC address of the the replier (2 marks). Write the filter and show the output in a screenshot.
+
+3. Find the MAC address and the IP address of the Gateway router (2 marks). Write the filter and show the output in a screenshot.
+
+Submit the pcap file and the PDF containing the answers. Please submit a single zip file named <Name>_<ID_number>. Make sure to turn in your submissions on time.

@@ -1,0 +1,19 @@
+Lab 9 : Public key-private key encryption and decryption
+Dasgaonkar Yogesh Namdeo
+22 points
+Due Apr 19, 6:59 PM
+
+
+Write a program that uses public key-private key encryption to encrypt and decrypt a text file. 
+The maximum size of the file is 1Kbytes. 
+
+1. The encryption program accepts public key (1 mark), name of the file (1 mark), and name of the output file (1 mark) as command line input parameters. It encrypts the file (4 marks)and stores it as the given name of the output file (1 mark).
+
+2. The decryption program accepts private key (1 mark), name of the encrypted file (1 mark), and name of the decrypted file (1 mark) as command line input parameters. It decrypts the file (4 marks) and stores it as the given name of the output file (1 mark).
+
+Submit code of encryption program, description program, a file containing private key (1 mark), a file containing corresponding public key (1 mark), a text file (1 mark), its encryption using the submitted private key (1 mark), and README file (2 marks). 
+
+
+The README file should mention how to compile your code and how to execute your code. 
+
+You may use OpenSSL library for encryption and decryption. You cannot use any existing commands, such as GnuPG, for encryption and decryption.
