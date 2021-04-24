@@ -1,0 +1,22 @@
+Lab 10 : Client-Server based public-private key encryption and decryption
+Dasgaonkar Yogesh Namdeo
+Due Apr 26, 6:59 PM
+
+There are two clients and a server in the application. The two clients communicate privately with each other via the server. When any client sends an encrypted message, the message and its decryption are displayed in the other client.
+
+
+ 1. The server as a command line argument accepts the port number to which it should bind. (2 mark)
+2. Each client, as command line arguments, accepts the IP address at which it will find the server, the port number of the server at that IP address, the filename containing its private key, and the filename containing the other client's public key. (2 marks)
+3. After connecting to the server, the client keeps on reading a line from the standard input. (2 marks) It encrypts the line and sends it to the server. (4 mark)
+4. The server forwards the message received from one client to another. (4 marks)
+5. When a client receives a message from the other client, (4 marks) it decrypts and displays both ciphertext and plaintext. (4 marks)
+6. Both the clients exit if the user types "exit" in any client. (2 marks)
+
+
+Submit code of client and server, two files containing the private keys (1 mark), two files containing the corresponding public keys (1 mark), and a README file (2 marks). 
+
+
+The README file should mention how to compile your code, how to execute your code, and a sample run of the code.You may use OpenSSL library for encryption and decryption. 
+
+
+You cannot use any existing commands, such as GnuPG, for encryption and decryption.
