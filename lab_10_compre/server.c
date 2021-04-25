@@ -10,10 +10,18 @@
 #include <string.h>
 #include <errno.h>
 #include <pthread.h>
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
+#include <openssl/evp.h>
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 1250
 #define MAX_CLIENTS 2
 #define DEBUG 0
+#define PUBLIC_KEY 0
+#define PRIVATE_KEY 1
 
 int active_connections;
 int client_active[MAX_CLIENTS];
@@ -47,7 +55,8 @@ void * sender_runner (void * param) {
         if(client_active[id]){
             // checking if there is any new message to send
             if(client_message_flag[id]){
-                strcpy(data, client_message[id]);
+                for(int k = 0; k<BUFFER_SIZE; k++) data[k] = client_message[id][k];
+                // strcpy(data, client_message[id]);
                 new_data = 1;
             }
             pthread_mutex_unlock(&mutex_client_data);
@@ -65,14 +74,20 @@ void * sender_runner (void * param) {
             if(is_exit) printf("[SERVER] closing client[%d] connection.\n", client_socket_descriptor);
             if(DEBUG) printf("new data found to send to client %d, fd %d\n", id, client_socket_descriptor);
             // sending response data
-            if(DEBUG) printf("sending response to client[%d] ... (\"%s\")\n", client_socket_descriptor, data);
-            int bytes_sent = send(client_socket_descriptor, data, strlen(data), 0);
-            if(bytes_sent != strlen(data)){
+            if(DEBUG) printf("sending response to client[%d] ... \n", client_socket_descriptor);
+            int bytes_sent = send(client_socket_descriptor, data, BUFFER_SIZE, 0);      
+            if(bytes_sent != BUFFER_SIZE){
                 printf("error sending response to client[%d]\n", client_socket_descriptor);
                 printf("[error %d]: %s\n", errno, strerror(errno));
                 continue;
             }
-            if(!is_exit) printf("[SERVER] data (%d bytes) sent to client[%d].\n", client_socket_descriptor, bytes_sent);
+            
+            // printf("recv:\n");
+            // for(int k = 0; k<BUFFER_SIZE; k++) printf("%c", data[k]);
+            // printf("\n\n");
+
+            // if(!is_exit) printf("[SERVER] data (%d bytes) sent to client[%d].\n", bytes_sent, client_socket_descriptor);
+            if(!is_exit) printf("[SERVER] data sent to client[%d].\n", client_socket_descriptor);
             new_data = 0;
             pthread_mutex_lock(&mutex_client_data);
             client_message_flag[id] = 0;
@@ -115,7 +130,8 @@ void * connection_runner (void * param) {
             // receiving request from the client
             if(DEBUG) printf("receiving request data from client[%d] ...\n", client_socket_descriptor);
             char * recv_data = (char *) malloc(BUFFER_SIZE * sizeof(char));
-            int bytes_received = recv(client_socket_descriptor, recv_data, BUFFER_SIZE, 0);
+            // int bytes_received = recv(client_socket_descriptor, recv_data, 10*BUFFER_SIZE, 0);
+            int bytes_received = recv(client_socket_descriptor, recv_data, BUFFER_SIZE, MSG_WAITALL);
             if(bytes_received == -1){
                 printf("error receiving request data from client[%d]. closing connection\n", client_socket_descriptor);
                 printf("[error %d]: %s\n", errno, strerror(errno));
@@ -124,14 +140,18 @@ void * connection_runner (void * param) {
             if(DEBUG) printf("request received from client[%d] (%d bytes)\n", client_socket_descriptor, bytes_received);
 
 
+            // printf("recv %d:\n", bytes_received);
+            // for(int k = 0; k<BUFFER_SIZE; k++) printf("%c", recv_data[k]);
+            // printf("\n\n");
+
             // verifying message
             if(bytes_received == 0){
                 printf("[SERVER] client[%d] disconnected.\n", client_socket_descriptor);
                 if(DEBUG) printf("[error %d]: %s\n", errno, strerror(errno));
                 break;
             }
-            recv_data[bytes_received] = '\0';       // might cause problems later
-            if(DEBUG) printf("[client[%d], %d bytes]: %s\n", client_socket_descriptor, bytes_received, recv_data);
+            // recv_data[bytes_received] = '\0';       // might cause problems later
+            if(DEBUG) printf("[client[%d], %d bytes]\n", client_socket_descriptor, bytes_received);
 
 
 
@@ -153,7 +173,8 @@ void * connection_runner (void * param) {
                     if(!client_message_flag[id]){
                         // if(DEBUG) printf("client %d flag 0\n", id);
                         client_message_flag[id] = 1;
-                        strcpy(client_message[id], recv_data);
+                        for(int k = 0; k<BUFFER_SIZE; k++) client_message[id][k] = recv_data[k];                        
+                        // strcpy(client_message[id], recv_data);
                         pthread_mutex_unlock(&mutex_client_data);
                         // if(DEBUG) printf("2 release to receive client %d\n", id);
                         client_sent++;

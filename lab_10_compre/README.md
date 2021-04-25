@@ -12,16 +12,16 @@ BITS ID- 2018A7PS0396G</div>
 3. Ensure the directory contains the required keys: `public.pem` and `private.pem`
 4. Compile the c programs.
     ```bash
-    $ gcc encrypt.c -o encrypt -lcrypto -lssl
-    $ gcc decrypt.c -o decrypt -lcrypto -lssl
+    $ gcc -pthread server.c -o server
+    $ gcc client.c -o client -pthread -lcrypto -lssl
     ```
 5. Encrypt the input file using the executable `encrypt`. Parameters: {public_key, input_file_name, encrypted_file_name}
     ```bash
-    $ ./encrypt public.pem input_file.txt encrypted_file.txt
+    $ ./server 8000
     ```
 6. Decrypt the encrypted file using the executable `decrypt`. Parameters: {private_key, encrypted_file_name, decrypted_file_name}
     ```bash
-    $ ./decrypt private.pem encrypted_file.txt decrypted_file.txt
+    $ ./client 127.0.0.1 8000 private.pem public.pem
     ```
 ## Generating Keys
 - The RSA key was geenrated using;
@@ -39,7 +39,7 @@ BITS ID- 2018A7PS0396G</div>
 ## Testing
 ```
 gcc -pthread server.c -o server && ./server 8000
-gcc -pthread -lcrypto -lssl client.c -o client && ./client 127.0.0.1 8000 private.pem public.pem
+gcc client.c -o client -pthread -lcrypto -lssl && ./client 127.0.0.1 8000 private.pem public.pem
 ```
 
 ## ToDo
