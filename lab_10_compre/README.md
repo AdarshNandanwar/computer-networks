@@ -46,7 +46,7 @@ gcc -pthread -lcrypto -lssl client.c -o client && ./client 127.0.0.1 8000 privat
 - see how to identify the client id
 - add mutex to all global variables
 - check if "exit" command work properly
-
+- curently when client does ^C, the other client stays
 ## Tests
 - send messgae when no other client (server currently hangs)
 - handle "exit"

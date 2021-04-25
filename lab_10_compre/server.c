@@ -13,7 +13,7 @@
 
 #define BUFFER_SIZE 1024
 #define MAX_CLIENTS 2
-#define DEBUG 1
+#define DEBUG 0
 
 int active_connections;
 int client_active[MAX_CLIENTS];
@@ -50,7 +50,6 @@ void * sender_runner (void * param) {
                 strcpy(data, client_message[id]);
                 new_data = 1;
             }
-            client_message_flag[id] = 0;
             pthread_mutex_unlock(&mutex_client_data);
             // if(DEBUG) printf("release lock to send to client %d\n", id);
         } else {
@@ -62,6 +61,8 @@ void * sender_runner (void * param) {
         }
 
         if(new_data){
+            int is_exit = !strcmp(data, "exit");
+            if(is_exit) printf("[SERVER] closing client[%d] connection.\n", client_socket_descriptor);
             if(DEBUG) printf("new data found to send to client %d, fd %d\n", id, client_socket_descriptor);
             // sending response data
             if(DEBUG) printf("sending response to client[%d] ... (\"%s\")\n", client_socket_descriptor, data);
@@ -71,12 +72,15 @@ void * sender_runner (void * param) {
                 printf("[error %d]: %s\n", errno, strerror(errno));
                 continue;
             }
-            printf("* data sent to client[%d] (%d bytes) *\n", client_socket_descriptor, bytes_sent);
+            if(!is_exit) printf("[SERVER] data (%d bytes) sent to client[%d].\n", client_socket_descriptor, bytes_sent);
+            new_data = 0;
+            pthread_mutex_lock(&mutex_client_data);
+            client_message_flag[id] = 0;
+            pthread_mutex_unlock(&mutex_client_data);
         }
-        new_data = 0;
     }
 
-    printf("* closing sender thread of client[%d] *\n", client_socket_descriptor);
+    if(DEBUG) printf("[SERVER] closing sender thread of client[%d].\n", client_socket_descriptor);
 
 	pthread_exit(NULL);
 }
@@ -122,12 +126,13 @@ void * connection_runner (void * param) {
 
             // verifying message
             if(bytes_received == 0){
-                printf("* client[%d] disconnected *\n", client_socket_descriptor);
+                printf("[SERVER] client[%d] disconnected.\n", client_socket_descriptor);
                 if(DEBUG) printf("[error %d]: %s\n", errno, strerror(errno));
                 break;
             }
             recv_data[bytes_received] = '\0';       // might cause problems later
             if(DEBUG) printf("[client[%d], %d bytes]: %s\n", client_socket_descriptor, bytes_received, recv_data);
+
 
 
             // sending it to the other clients
@@ -159,7 +164,15 @@ void * connection_runner (void * param) {
                     // if(DEBUG) printf("2 release to receive client %d\n", id);
                 }
             }
-            if(DEBUG) printf("message sent to %d clients.\n", client_sent);
+
+            // exit command
+            if(!strcmp(recv_data, "exit")){
+                printf("[SERVER] client[%d] exited.\n", client_socket_descriptor);
+                if(DEBUG) printf("[error %d]: %s\n", errno, strerror(errno));
+                break;
+            } else {
+                printf("[SERVER] message from client[%d] forwarded to %d client%s.\n", client_socket_descriptor, client_sent, client_sent==1?"":"s");
+            }
 
         }
         
@@ -258,7 +271,7 @@ int main(int argc, char * argv[]){
         return 3;
     }
     
-    printf("listening on port %d ...\n", server_port);
+    printf("[SERVER] listening on port %d ...\n", server_port);
 
     while(1){
 
@@ -279,7 +292,7 @@ int main(int argc, char * argv[]){
         if(!status) active_connections++;
         pthread_mutex_unlock(&mutex);
         if(status){
-            printf("* client[%d] rejected. client limit (%d) reached. *\n", client_socket_descriptor, MAX_CLIENTS);
+            printf("[SERVER] client[%d] rejected. client limit (%d) reached.\n", client_socket_descriptor, MAX_CLIENTS);
 
             // sending confirmation
             strcpy(confirmation_message, "0");
@@ -289,7 +302,7 @@ int main(int argc, char * argv[]){
                 printf("error sending confirmation to client[%d]\n", client_socket_descriptor);
                 printf("[error %d]: %s\n", errno, strerror(errno));
             } else {
-                if(DEBUG) printf("* confirmation sent to client[%d] (%d bytes) *\n", client_socket_descriptor, bytes_sent);
+                if(DEBUG) printf("[SERVER] confirmation sent to client[%d] (%d bytes).\n", client_socket_descriptor, bytes_sent);
             }
 
             close(client_socket_descriptor);
@@ -305,11 +318,11 @@ int main(int argc, char * argv[]){
                 close(client_socket_descriptor);
                 continue;
             } else {
-                if(DEBUG) printf("* confirmation sent to client[%d] (%d bytes) *\n", client_socket_descriptor, bytes_sent);
+                if(DEBUG) printf("[SERVER] confirmation sent to client[%d] (%d bytes).\n", client_socket_descriptor, bytes_sent);
             }
         }
 
-        printf("* client[%d] accepted *\n", client_socket_descriptor);
+        printf("[SERVER] client[%d] accepted.\n", client_socket_descriptor);
 
         // assigning the client_id to the client
         int id;

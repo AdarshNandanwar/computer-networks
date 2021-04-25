@@ -12,14 +12,17 @@
 #include <pthread.h>
 
 #define BUFFER_SIZE 1024
-#define DEBUG 1
+#define DEBUG 0
+
+int is_connected = 1;
+pthread_mutex_t mutex;
 
 typedef struct ParamStruct {
     int server_socket_descriptor;
 } param_struct;
 
 
-void * receiver_runner (void * param){
+void * receiver_runner(void * param){
     param_struct * p = (param_struct *) param;
     char * recv_data = (char *) malloc(BUFFER_SIZE * sizeof(char));
     int server_socket_descriptor = p->server_socket_descriptor;
@@ -40,20 +43,30 @@ void * receiver_runner (void * param){
         if(DEBUG) printf("data received (%d bytes)\n", bytes_received);
 
         // printing the response message
-        if(bytes_received){
-            response_data[bytes_received] = '\0';
+        response_data[bytes_received] = '\0';
+        if(bytes_received && strcmp(response_data, "exit")){
 
             // decrypt
 
 
-            printf("[server, %d bytes]: %s\n", bytes_received, response_data);
+
+
+
+
+            printf("[CLIENT, %d bytes]: %s\n", bytes_received, response_data);
         } else {
-            printf("server disconnected\n");
+            printf("[CLIENT] server disconnected.\n");
             if(DEBUG) printf("[error %d]: %s\n", errno, strerror(errno));
+            pthread_mutex_lock(&mutex);
+            is_connected = 0;
+            pthread_mutex_unlock(&mutex);
             break;
         }
     }
-    if(DEBUG) printf("closing connection thread %d\n", server_socket_descriptor);
+    if(DEBUG) printf("closing receiver thread %d\n", server_socket_descriptor);
+    printf("[CLIENT] press <enter> to exit.\n");
+    close(server_socket_descriptor);
+	pthread_exit(NULL);
 }
 
 int main(int argc, char * argv[]){
@@ -120,11 +133,11 @@ int main(int argc, char * argv[]){
 
     // checking if server limit exceeded
     if(strcmp(confirmation_message, "1")){
-        printf("server's client limit reached. try again in a while.\n");
+        printf("[CLIENT] server's client limit reached. try again in a while.\n");
         close(socket_descriptor);
         return 4;
     } else {
-        printf("connected to the server\n");
+        printf("[CLIENT] connected to the server.\n");
     }
 
     param->server_socket_descriptor = socket_descriptor;
@@ -135,17 +148,30 @@ int main(int argc, char * argv[]){
         return 3;
     }
 
+    int disconnected = 0;
     while(1){
 
         // taking the input message from STDIN
         do {
-            printf("Enter the message: ");
+            printf(">>> ");
             fgets(message_send, BUFFER_SIZE, stdin);
             message_send[strlen(message_send)-1] = '\0';
+
+            // checking the connection
+            pthread_mutex_lock(&mutex);
+            disconnected = !is_connected;
+            pthread_mutex_unlock(&mutex);
+            if(disconnected) break;
         } while(strlen(message_send) == 0);
 
+        if(disconnected) break;
 
         // encrypt
+
+
+
+
+
 
 
         // send request data
@@ -158,14 +184,14 @@ int main(int argc, char * argv[]){
             printf("[error %d]: %s\n", errno, strerror(errno));
             return 4;
         }
-        printf("* sending message (%d bytes) *\n", bytes_sent);
+        printf("[CLIENT] sending message (%d bytes).\n", bytes_sent);
 
         // exit condition
         if(strcmp(message_send, "exit") == 0) break;
 
     }
 
-    if(DEBUG) printf("canceling connection thread\n");
+    if(DEBUG) printf("canceling receiver thread\n");
     pthread_cancel(tid);
 
     // closing the socket
