@@ -3,31 +3,47 @@
 Name- Adarsh Nandanwar<br>
 BITS ID- 2018A7PS0396G</div>
 <br>
-<br>
 
-# Public Private RSA Encryption and Decryption in C
+# Two Client Communication Server with RSA Encryption in C
 ## Usage Instructions
 1. Install OpenSSL library.
-2. Open a terminal window in the directory containing `encrypt.c` and `decrypt.c` file.
-3. Ensure the directory contains the required keys: `public.pem` and `private.pem`
-4. Compile the c programs.
+### Terminal 1 (Server)
+2. Open a terminal window in the directory containing `server.c` file.
+3. Compile the c program.
     ```bash
     $ gcc -pthread server.c -o server
-    $ gcc client.c -o client -pthread -lcrypto -lssl
     ```
-5. Encrypt the input file using the executable `encrypt`. Parameters: {public_key, input_file_name, encrypted_file_name}
+4. Run the server using the executable `server`. Parameters: {port_number}.
     ```bash
     $ ./server 8000
     ```
-6. Decrypt the encrypted file using the executable `decrypt`. Parameters: {private_key, encrypted_file_name, decrypted_file_name}
+### Terminal 2 (Client 1)
+5. Open a terminal window in the directory containing `client.c` file.
+6. Compile the c program.
     ```bash
-    $ ./client 127.0.0.1 8000 private.pem public.pem
+    $ gcc client.c -o client_1 -pthread -lcrypto -lssl
+    ```
+7. Run the client 1 using the executable `client_1`. Parameters: {server_IP_address, port_number, private_key_file, public_key_file}.
+    ```bash
+    $ ./client_1 127.0.0.1 8000 private_2.pem public_1.pem
+    ```
+### Terminal 3 (Client 2)
+8. Open a terminal window in the directory containing `client.c` file.
+9. Compile the c program.
+    ```bash
+    $ gcc client.c -o client_2 -pthread -lcrypto -lssl
+    ```
+10. Run the client 2 using the executable `client_2`. Parameters: {server_IP_address, port_number, private_key_file, public_key_file}.
+    ```bash
+    $ ./client_2 127.0.0.1 8000 private_1.pem public_2.pem
     ```
 ## Generating Keys
-- The RSA key was geenrated using;
+- The RSA keys were generated using:
     ```bash
-    $ openssl genrsa -out private.pem 10000
-    $ openssl rsa -in private.pem -pubout -out public.pem
+    $ openssl genrsa -out private_1.pem 10000
+    $ openssl genrsa -out private_2.pem 10000
+    $ openssl rsa -in private_1.pem -pubout -out public_1.pem
+    $ openssl rsa -in private_2.pem -pubout -out public_2.pem
     ```
 - `RSA_PKCS1_PADDING` padding was used in the program. Using this, maximum input file size that can be encrypted using RSA is: 
     ```
@@ -36,17 +52,3 @@ BITS ID- 2018A7PS0396G</div>
         = (10000/8)-11 
         = 1239
     ```
-## Testing
-```
-gcc -pthread server.c -o server && ./server 8000
-gcc client.c -o client -pthread -lcrypto -lssl && ./client 127.0.0.1 8000 private.pem public.pem
-```
-
-## ToDo
-- see how to identify the client id
-- add mutex to all global variables
-- check if "exit" command work properly
-- curently when client does ^C, the other client stays
-## Tests
-- send messgae when no other client (server currently hangs)
-- handle "exit"

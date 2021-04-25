@@ -27,6 +27,7 @@ int active_connections;
 int client_active[MAX_CLIENTS];
 int client_message_flag[MAX_CLIENTS];
 char * client_message[MAX_CLIENTS];
+
 pthread_mutex_t mutex;
 pthread_mutex_t mutex_stdin;
 pthread_mutex_t mutex_client_data;
@@ -48,23 +49,18 @@ void * sender_runner (void * param) {
     if(DEBUG) printf("starting sender thread of client %d, fd %d\n", id, client_socket_descriptor);
 
     while(1){
-        // if(DEBUG) printf("waiting for lock to send to client %d\n", id);
         pthread_mutex_lock(&mutex_client_data);
-        // if(DEBUG) printf("unlocked to send to client %d\n", id);
         // checking if client is connected
         if(client_active[id]){
             // checking if there is any new message to send
             if(client_message_flag[id]){
                 for(int k = 0; k<10*BUFFER_SIZE; k++) data[k] = client_message[id][k];
-                // strcpy(data, client_message[id]);
                 new_data = 1;
             }
             pthread_mutex_unlock(&mutex_client_data);
-            // if(DEBUG) printf("release lock to send to client %d\n", id);
         } else {
             // client not connected
             pthread_mutex_unlock(&mutex_client_data);
-            // if(DEBUG) printf("release lock to send to client %d\n", id);
             is_active = 0;
             break;
         }
@@ -81,12 +77,7 @@ void * sender_runner (void * param) {
                 printf("[error %d]: %s\n", errno, strerror(errno));
                 continue;
             }
-            
-            // printf("recv:\n");
-            // for(int k = 0; k<BUFFER_SIZE; k++) printf("%c", data[k]);
-            // printf("\n\n");
 
-            // if(!is_exit) printf("[SERVER] data (%d bytes) sent to client[%d].\n", bytes_sent, client_socket_descriptor);
             if(!is_exit) printf("[SERVER] data sent to client[%d].\n", client_socket_descriptor);
             new_data = 0;
             pthread_mutex_lock(&mutex_client_data);
@@ -94,7 +85,6 @@ void * sender_runner (void * param) {
             pthread_mutex_unlock(&mutex_client_data);
         }
     }
-
     if(DEBUG) printf("[SERVER] closing sender thread of client[%d].\n", client_socket_descriptor);
 
 	pthread_exit(NULL);
@@ -130,7 +120,6 @@ void * connection_runner (void * param) {
             // receiving request from the client
             if(DEBUG) printf("receiving request data from client[%d] ...\n", client_socket_descriptor);
             char * recv_data = (char *) malloc(10*BUFFER_SIZE * sizeof(char));
-            // int bytes_received = recv(client_socket_descriptor, recv_data, 10*BUFFER_SIZE, 0);
             int bytes_received = recv(client_socket_descriptor, recv_data, 10*BUFFER_SIZE, MSG_WAITALL);
             if(bytes_received == -1){
                 printf("error receiving request data from client[%d]. closing connection\n", client_socket_descriptor);
@@ -139,55 +128,33 @@ void * connection_runner (void * param) {
             }
             if(DEBUG) printf("request received from client[%d] (%d bytes)\n", client_socket_descriptor, bytes_received);
 
-            // printf("[SERVER, %d] ciphertext:\n", bytes_received);
-            // for(int k = 0; k<BUFFER_SIZE; k++) printf("%c", recv_data[k]);
-            // printf("<END>\n");
-            // for(int k = BUFFER_SIZE; k<10*BUFFER_SIZE; k++) printf("%c", recv_data[k]);
-            // printf("<END>\n");
-
-            // printf("recv %d:\n", bytes_received);
-            // for(int k = 0; k<BUFFER_SIZE; k++) printf("%c", recv_data[k]);
-            // printf("\n\n");
-
             // verifying message
             if(bytes_received == 0){
                 printf("[SERVER] client[%d] disconnected.\n", client_socket_descriptor);
                 if(DEBUG) printf("[error %d]: %s\n", errno, strerror(errno));
-                break;
+                // break;
+                strcpy(recv_data, "exit");
             }
-            // recv_data[bytes_received] = '\0';       // might cause problems later
             if(DEBUG) printf("[client[%d], %d bytes]\n", client_socket_descriptor, bytes_received);
-
-
 
             // sending it to the other clients
             int client_sent = 0;
             for(int id = 0; id<MAX_CLIENTS; id++){
                 if(id == client_id) continue;
-                // if(DEBUG) printf("1 waiting for lock to receive client %d\n", id);
                 pthread_mutex_lock(&mutex_client_data);
-                // if(DEBUG) printf("1 unlocked to receive client %d\n", id);
                 int is_active = client_active[id];
                 pthread_mutex_unlock(&mutex_client_data);
-                // if(DEBUG) printf("1 release to receive client %d\n", id);
                 if(!is_active) continue;
                 while(1){
-                    // if(DEBUG) printf("2 waiting for lock to receive client %d\n", id);
                     pthread_mutex_lock(&mutex_client_data);
-                    // if(DEBUG) printf("2 unlocked to receive client %d\n", id);
                     if(!client_message_flag[id]){
-                        // if(DEBUG) printf("client %d flag 0\n", id);
                         client_message_flag[id] = 1;
-                        for(int k = 0; k<10*BUFFER_SIZE; k++) client_message[id][k] = recv_data[k];                        
-                        // strcpy(client_message[id], recv_data);
+                        for(int k = 0; k<10*BUFFER_SIZE; k++) client_message[id][k] = recv_data[k];
                         pthread_mutex_unlock(&mutex_client_data);
-                        // if(DEBUG) printf("2 release to receive client %d\n", id);
                         client_sent++;
                         break;
                     }
-                    // if(DEBUG) printf("client %d flag 1\n", id);
                     pthread_mutex_unlock(&mutex_client_data);
-                    // if(DEBUG) printf("2 release to receive client %d\n", id);
                 }
             }
 
@@ -199,11 +166,8 @@ void * connection_runner (void * param) {
             } else {
                 printf("[SERVER] message from client[%d] forwarded to %d client%s.\n", client_socket_descriptor, client_sent, client_sent==1?"":"s");
             }
-
         }
-        
     }
-
 
     close(client_socket_descriptor);
 
@@ -214,17 +178,12 @@ void * connection_runner (void * param) {
     pthread_mutex_unlock(&mutex);
 
     // cleaning client data
-    // printf("waiting for lock to clost client %d\n", client_id);
     pthread_mutex_lock(&mutex_client_data);
-    // printf("unlocked to close client %d\n", client_id);
     client_active[client_id] = 0;
     client_message_flag[client_id] = 0;
     pthread_mutex_unlock(&mutex_client_data);
-    // printf("release lock to close client %d\n", client_id);
     if(DEBUG){
-        for(int id = 0; id<MAX_CLIENTS; id++){
-            printf("%d ", client_active[id]);
-        }
+        for(int id = 0; id<MAX_CLIENTS; id++) printf("%d ", client_active[id]);
         printf("\n");
     }
 
@@ -352,25 +311,19 @@ int main(int argc, char * argv[]){
 
         // assigning the client_id to the client
         int id;
-        // printf("waiting for lock to create client\n");
         pthread_mutex_lock(&mutex_client_data);
-        // printf("unlocked to create client\n");
         for(id = 0; id<MAX_CLIENTS; id++) if(!client_active[id]) break;
         if(id == MAX_CLIENTS){
             pthread_mutex_unlock(&mutex_client_data);
-            // printf("release lock to create client\n");
             if(DEBUG) printf("id not available to allot to the client\n");
             continue;
         } else {
             client_active[id] = 1;
             pthread_mutex_unlock(&mutex_client_data);
-            // printf("release lock to create client\n");
             if(DEBUG) printf("client id allocated: %d\n", id);
         }
         if(DEBUG){
-            for(int id = 0; id<MAX_CLIENTS; id++){
-                printf("%d ", client_active[id]);
-            }
+            for(int id = 0; id<MAX_CLIENTS; id++) printf("%d ", client_active[id]);
             printf("\n");
         }
 

@@ -23,6 +23,7 @@
 #define PRIVATE_KEY 1
 
 int is_connected = 1;
+
 pthread_mutex_t mutex;
 
 typedef struct ParamStruct {
@@ -30,11 +31,11 @@ typedef struct ParamStruct {
     char * private_key;
 } param_struct;
 
+
 int get_file_content(char * file_name, char * content, int len){
     FILE * fp = fopen(file_name, "r");
     if (fp == NULL){
         fprintf(stderr, "error loading content from \"%s\".\n", file_name);
-        fclose(fp);
         return -1;
     } else {
         fread(content, len, 1, fp);
@@ -42,6 +43,7 @@ int get_file_content(char * file_name, char * content, int len){
     fclose(fp);
     return 0;
 }
+
 
 RSA * generate_rsa(unsigned char * key, int type){
     RSA * rsa = NULL;
@@ -65,16 +67,21 @@ RSA * generate_rsa(unsigned char * key, int type){
     return rsa;
 }
 
+
 void print_errors(){
     FILE * fp = fopen("logs.txt", "wb");
-    ERR_print_errors_fp(fp);
-    fclose(fp);
+    if (fp == NULL){
+        fprintf(stderr, "error opening \"%s\".\n", "logs.txt");
+    } else {
+        ERR_print_errors_fp(fp);
+        fclose(fp);
+    }
 }
+
 
 int decrypt(char * response_data, char * decrypted_data, char * private_key){
     if(DEBUG) printf("decrypting...\n");
     RSA * rsa = generate_rsa(private_key, PRIVATE_KEY);
-    // printf("size: %d\n", RSA_size(rsa));
     int decrypted_data_length = RSA_private_decrypt(RSA_size(rsa), response_data, decrypted_data, rsa, RSA_PKCS1_PADDING);
     if(decrypted_data_length == -1){
         if(DEBUG) printf("decryption failed\n");
@@ -83,6 +90,7 @@ int decrypt(char * response_data, char * decrypted_data, char * private_key){
     if(DEBUG) printf("decryption successsful. data length = %d\n", decrypted_data_length);
     return decrypted_data_length;
 }
+
 
 void * receiver_runner(void * param){
     param_struct * p = (param_struct *) param;
@@ -104,15 +112,11 @@ void * receiver_runner(void * param){
         if(DEBUG) printf("data received (%d bytes)\n", bytes_received);
 
         // printing the response message
-        // response_data[bytes_received] = '\0';
         if(bytes_received && strcmp(response_data, "exit")){
 
-
             printf("\n[CLIENT] ciphertext:\n");
-            // printf("----- BEGIN CIPHERTEXT -----\n");
             for(int k = 0; k<BUFFER_SIZE; k++) printf("%c", response_data[k]);
             printf("\n");
-            // printf("----- END CIPHERTEXT -----\n");
             if(DEBUG){
                 printf("<END>\n");
                 for(int k = BUFFER_SIZE; k<10*BUFFER_SIZE; k++) printf("%c", response_data[k]);
@@ -123,9 +127,8 @@ void * receiver_runner(void * param){
             char * decrypted_data = (char *) malloc(10*BUFFER_SIZE * sizeof(char));
             int dec_len = decrypt(response_data, decrypted_data, private_key);
             if(dec_len == -1) continue;
-            printf("[CLIENT] plaintext: ");
-            for(int k = 0; k<dec_len; k++) printf("%c", decrypted_data[k]);
-            printf("\n");
+            decrypted_data[dec_len] = '\0';
+            printf("[CLIENT] plaintext: %s\n", decrypted_data);
             if(DEBUG) printf("[CLIENT] data size: %ld\n", strlen(decrypted_data));
 
         } else {
@@ -142,6 +145,7 @@ void * receiver_runner(void * param){
     close(server_socket_descriptor);
 	pthread_exit(NULL);
 }
+
 
 int main(int argc, char * argv[]){
 
@@ -241,7 +245,6 @@ int main(int argc, char * argv[]){
 
         // taking the input message from STDIN
         do {
-            printf(">>> ");
             fgets(message_send, BUFFER_SIZE, stdin);
             message_send[strlen(message_send)-1] = '\0';
 
@@ -267,7 +270,6 @@ int main(int argc, char * argv[]){
             continue;
         }
         if(DEBUG) printf("encryption successsful.\n");
-
         if(DEBUG){
             printf("[CLIENT] ciphertext:\n");
             for(int k = 0; k<BUFFER_SIZE; k++) printf("%c", encrypted_data[k]);
@@ -277,27 +279,14 @@ int main(int argc, char * argv[]){
             printf("<END>\n");
         }
 
-
-        // decryption using private key
-        char * decrypted_data = (char *) malloc(10*BUFFER_SIZE * sizeof(char));
-        int dec_len = decrypt(encrypted_data, decrypted_data, private_key);
-        if(dec_len == -1) continue;
-        if(DEBUG) printf("decrypted data: %s\n", decrypted_data);
-        if(DEBUG) printf("data size: %ld\n", strlen(decrypted_data));
-
         // send request data
         if(DEBUG) printf("sending the message to server ... (\"%s\")\n", message_send);
         char * request_data = (char *) malloc(10*BUFFER_SIZE * sizeof(char));
-
-        // printf("data before sending %ld:\n", strlen(request_data));
-        // for(int k = 0; k<BUFFER_SIZE; k++) printf("|%c", request_data[k]);
-        // printf("\n\n");
         if(strcmp(message_send, "exit")){
             for(int k = 0; k<10*BUFFER_SIZE; k++) request_data[k] = encrypted_data[k];
         } else {
             strcpy(request_data, "exit");
         }
-        // int bytes_sent = send(socket_descriptor, request_data, strlen(request_data), 0);
         int bytes_sent = send(socket_descriptor, request_data, 10*BUFFER_SIZE, 0);
         if(bytes_sent != 10*BUFFER_SIZE){
             printf("error sending request\n");
@@ -306,13 +295,8 @@ int main(int argc, char * argv[]){
         }
         printf("[CLIENT] sending message.\n");
 
-        // printf("sent %d:\n", bytes_sent);
-        // for(int k = 0; k<BUFFER_SIZE; k++) printf("%c", encrypted_data[k]);
-        // printf("\n\n");
-
         // exit condition
         if(strcmp(message_send, "exit") == 0) break;
-
     }
 
     if(DEBUG) printf("canceling receiver thread\n");
