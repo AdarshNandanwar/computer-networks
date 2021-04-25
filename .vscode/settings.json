@@ -7,6 +7,8 @@
         "unistd.h": "c",
         "in.h": "c",
         "fcntl.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "errno.h": "c",
+        "pem.h": "c"
     }
 }
