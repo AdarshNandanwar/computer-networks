@@ -113,9 +113,11 @@ void * receiver_runner(void * param){
             for(int k = 0; k<BUFFER_SIZE; k++) printf("%c", response_data[k]);
             printf("\n");
             // printf("----- END CIPHERTEXT -----\n");
-            // printf("<END>\n");
-            // for(int k = BUFFER_SIZE; k<10*BUFFER_SIZE; k++) printf("%c", response_data[k]);
-            // printf("<END>\n");
+            if(DEBUG){
+                printf("<END>\n");
+                for(int k = BUFFER_SIZE; k<10*BUFFER_SIZE; k++) printf("%c", response_data[k]);
+                printf("<END>\n");
+            }
 
             // decryption using private key
             char * decrypted_data = (char *) malloc(10*BUFFER_SIZE * sizeof(char));
@@ -270,9 +272,9 @@ int main(int argc, char * argv[]){
             printf("[CLIENT] ciphertext:\n");
             for(int k = 0; k<BUFFER_SIZE; k++) printf("%c", encrypted_data[k]);
             printf("\n");
-            // printf("<END>\n");
-            // for(int k = BUFFER_SIZE; k<10*BUFFER_SIZE; k++) printf("%c", encrypted_data[k]);
-            // printf("<END>\n");
+            printf("<END>\n");
+            for(int k = BUFFER_SIZE; k<10*BUFFER_SIZE; k++) printf("%c", encrypted_data[k]);
+            printf("<END>\n");
         }
 
 
@@ -285,18 +287,18 @@ int main(int argc, char * argv[]){
 
         // send request data
         if(DEBUG) printf("sending the message to server ... (\"%s\")\n", message_send);
-        char * request_data = (char *) malloc(BUFFER_SIZE * sizeof(char));
+        char * request_data = (char *) malloc(10*BUFFER_SIZE * sizeof(char));
 
         // printf("data before sending %ld:\n", strlen(request_data));
         // for(int k = 0; k<BUFFER_SIZE; k++) printf("|%c", request_data[k]);
         // printf("\n\n");
         if(strcmp(message_send, "exit")){
-            for(int k = 0; k<BUFFER_SIZE; k++) request_data[k] = encrypted_data[k];
+            for(int k = 0; k<10*BUFFER_SIZE; k++) request_data[k] = encrypted_data[k];
         } else {
             strcpy(request_data, "exit");
         }
         // int bytes_sent = send(socket_descriptor, request_data, strlen(request_data), 0);
-        int bytes_sent = send(socket_descriptor, encrypted_data, 10*BUFFER_SIZE, 0);
+        int bytes_sent = send(socket_descriptor, request_data, 10*BUFFER_SIZE, 0);
         if(bytes_sent != 10*BUFFER_SIZE){
             printf("error sending request\n");
             printf("[error %d]: %s\n", errno, strerror(errno));
