@@ -141,9 +141,8 @@ void * receiver_runner(void * param){
         }
     }
     if(DEBUG) printf("closing receiver thread %d\n", server_socket_descriptor);
-    printf("[CLIENT] press <enter> to exit.\n");
     close(server_socket_descriptor);
-	pthread_exit(NULL);
+    exit(0);
 }
 
 
