@@ -83,6 +83,7 @@ void * sender_runner (void * param) {
             pthread_mutex_lock(&mutex_client_data);
             client_message_flag[id] = 0;
             pthread_mutex_unlock(&mutex_client_data);
+            if(is_exit) break;
         }
     }
     if(DEBUG) printf("[SERVER] closing sender thread of client[%d].\n", client_socket_descriptor);
@@ -105,8 +106,8 @@ void * connection_runner (void * param) {
     pthread_attr_t attr;
     pthread_attr_init(&attr); 
     pthread_attr_getdetachstate(&attr,&attr_state);
-    if(attr_state == PTHREAD_CREATE_JOINABLE){
-        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    if(attr_state != PTHREAD_CREATE_JOINABLE){
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
     }
 
     // creating thread to send data
@@ -169,8 +170,6 @@ void * connection_runner (void * param) {
         }
     }
 
-    close(client_socket_descriptor);
-
     // increasing limit
     pthread_mutex_lock(&mutex);
     active_connections--;
@@ -186,6 +185,10 @@ void * connection_runner (void * param) {
         for(int id = 0; id<MAX_CLIENTS; id++) printf("%d ", client_active[id]);
         printf("\n");
     }
+
+    pthread_join(tid_sender, NULL);
+    close(client_socket_descriptor);
+    if(DEBUG) printf("[SERVER] sender thread joined. socket closed %d\n", client_socket_descriptor);
 
     if(DEBUG) printf("closing connection thread of client %d, fd %d\n", client_id, client_socket_descriptor);
 	pthread_exit(NULL);
